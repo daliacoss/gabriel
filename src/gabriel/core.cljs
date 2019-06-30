@@ -3,7 +3,7 @@
 
 ;; define your app data so that it doesn't get over-written on reload
 
-(defonce app-state (reagent/atom {:current-frame :the-face}))
+(defonce app-state (reagent/atom {:current-page :the-face}))
 
 (defn some-rec [pred coll]
   (when (not (empty? coll))
@@ -13,38 +13,38 @@
         (sequential? x) (recur pred x)
         () (recur pred (rest coll))))))
 
-(defn frame [{:keys [id title]} & content]
+(defn page [{:keys [id title]} & content]
   (if (some-rec #{:p} content)
     [vec content]
     [vec (cons :p content)]))
 
 
-(defn clicked-f-link [id]
-  (swap! app-state assoc :current-frame (keyword id)))
+(defn clicked-page-link [id]
+  (swap! app-state assoc :current-page (keyword id)))
 
-(defn f-link [{:keys [id]} & content]
+(defn page-link [{:keys [id]} & content]
   [:a {:href (str "#" id)
-       :on-click #(clicked-f-link id)}
+       :on-click #(clicked-page-link id)}
    content])
 
-(defonce frames
+(defonce mypages
   {:the-face
    ["Was this the face that launched a thousand ships," [:br]
-    "And " [f-link {:id "homo-fuge"} "burned"] " the topless towers of " [:em "Ilium"] "?"]
+    "And " [page-link {:id "homo-fuge"} "burned"] " the topless towers of " [:em "Ilium"] "?"]
    :homo-fuge
    [:p "I see it plain; here in this place is writ,", [:br]
     [:em "Homo, fuge"] ": yet shall not Faustus fly."]})
 
 
-(defn main []
-  (let [k (:current-frame @app-state)]
-    (let [p (k frames)]
+(defn book [{:keys [pages]}]
+  (let [k (:current-page @app-state)]
+    (let [p (k pages)]
       [:div
-       (apply vector (concat [frame {:id k}] p))
+       (apply vector (concat [page {:id k}] p))
        ])))
 
 (defn start []
-  (reagent/render-component [main]
+  (reagent/render-component [book {:pages mypages}]
                             (. js/document (getElementById "app"))))
 
 (defn ^:export init []
