@@ -19,22 +19,23 @@
         (map #(update-component-params %1 k v) (nthrest coll 2))))
     coll))
 
-(defn page [{:keys [current-page]} & content]
-  (let [ucontent (update-component-params content :current-page current-page)]
+(defn page [{:keys [state]} & content]
+  (let [ucontent (update-component-params content :state state)]
     (if (some-rec #{:p} ucontent)
       (vec ucontent)
       (vec (cons :p ucontent)))))
 
-(defn page-link [{:keys [id current-page]} & content]
-  (do (println current-page)
+(defn page-link [{:keys [id state]} & content]
+  (do 
   [:a {:href (str "#" (name id)) 
-       :on-click #(reset! current-page (keyword id))}
+       :on-click #(reset! (state :current-page) (keyword id))}
    content]))
+
 
 (defn book-viewer [{:keys [pages state]}]
   (let [p (pages @(state :current-page))]
     [:div {:class "gabriel-book"}
-     (vec (concat [page state] p))
+     (vec (concat [page {:state state}] p))
      ]))
 
 (defonce mypages
