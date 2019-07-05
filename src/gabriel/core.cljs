@@ -19,38 +19,39 @@
         (map #(update-component-params %1 k v) (nthrest coll 2))))
     coll))
 
-(defn page [{:keys [state]} & content]
-  (let [ucontent (update-component-params content :state state)]
-    (if (some-rec #{:p} ucontent)
-      (vec ucontent)
-      (vec (cons :p ucontent)))))
-
 (defn page-link [{:keys [id state]} & content]
   (do 
   [:a {:href (str "#" (name id)) 
        :on-click #(reset! (state :current-page) (keyword id))}
    content]))
 
-
-(defn book-viewer [{:keys [pages state]}]
+(defn book [{:keys [pages state]}]
   (let [p (pages @(state :current-page))]
-    [:div {:class "gabriel-book"}
-     (vec (concat [page {:state state}] p))
-     ]))
+    (into [:div {:class "gabriel-book"}]
+          (update-component-params p :state state))))
+
+(defn reset [params]
+  ;;(map #(apply reset! %1) params)
+)
+
+(defonce myvars
+  {:contract-sealed false})
 
 (defonce mypages
   {:start
-   ["Was this the face that launched a thousand ships," [:br]
-    "And " [page-link {:id "homo-fuge"} "burned"] " the topless towers of " [:em "Ilium"] "?"]
+   [[:p "Was this the face that launched a thousand ships," [:br]
+     "And " [page-link {:id "homo-fuge"} "burned"] " the topless towers of "
+     [:em "Ilium"] "?"]]
    :homo-fuge
-   [:p "I see it plain; here in this place is writ,", [:br]
-    [:em "Homo, fuge"] ": yet shall not Faustus fly."]})
+   [[:p "I see it plain; here in this place is writ," [:br]
+     [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
 (defonce my-current-page (reagent/atom :start))
 
 (defn start []
   (reagent/render-component
-    [book-viewer {:pages mypages :state {:current-page my-current-page}}]
+    [book {:pages mypages
+           :state (conj myvars {:current-page my-current-page})}]
     (. js/document (getElementById "app"))))
 
 (defn ^:export init []
