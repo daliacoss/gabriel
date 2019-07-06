@@ -1,5 +1,6 @@
 (ns gabriel.core
-  (:require [reagent.core :as reagent]))
+  (:require [reagent.core :as reagent]
+            [hickory.core :as hickory]))
 
 (defn some-rec [pred coll]
   (when (not (empty? coll))
@@ -51,23 +52,26 @@
 (defn atomize-vals [m]
   (zipmap (keys m) (map reagent/atom (vals m))))
 
-(defonce myvars
+(def myvars
   {:contract-sealed false})
 
-(defonce mypages
+(def mypages
   {:start
    [[Reset {:contract-sealed 1}]
     [:h3 "Gabriel example project"]
     [:p "Was this the face that launched a thousand ships," [:br]
      "And " [PageLink {:id "homo-fuge"} "burned"] " the topless towers of "
      [:em "Ilium"] "?"]
-    [:p [State {:var :contract-sealed}]]]
+    [:p
+     [State {:var :contract-sealed}]
+     [Case {:var :contract-sealed} 1 "meow" false "moo" "mow"]]]
    :homo-fuge
    [[:p [Case {:var :contract-sealed} 1 "meow" false "moo" "mow"]]
     [:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
-(defonce my-current-page (reagent/atom :start))
+(def my-current-page (reagent/atom :start))
+
 
 (defn start []
   (reagent/render-component
