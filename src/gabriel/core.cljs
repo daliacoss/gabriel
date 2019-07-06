@@ -1,5 +1,5 @@
 (ns gabriel.core
-  (:require [reagent.core :as reagent] [cljs.js :as cljs]))
+  (:require [reagent.core :as reagent]))
 
 (defn some-rec [pred coll]
   (when (not (empty? coll))
@@ -31,19 +31,34 @@
           (update-component-params p :state state))))
 
 (defn reset [params]
-  ;;(map #(apply reset! %1) params)
-)
+  (let [state (params :state)
+        params-except-state (dissoc params :state)]
+    (doall (map
+     #(reset! (state (key %)) (val %))
+     params-except-state))
+    nil))
+
+(defn state [params] (do 
+  ;;@(get-in params [:state :contract-sealed])))
+  @(get-in params [:state (-> :var params keyword)])))
+
+(defn atomize-vals [m]
+  (zipmap (keys m) (map reagent/atom (vals m))))
 
 (defonce myvars
   {:contract-sealed false})
 
 (defonce mypages
   {:start
-   [[:p "Was this the face that launched a thousand ships," [:br]
+   [[reset {:contract-sealed 1}]
+    [:h3 "Gabriel example project"]
+    [:p "Was this the face that launched a thousand ships," [:br]
      "And " [page-link {:id "homo-fuge"} "burned"] " the topless towers of "
-     [:em "Ilium"] "?"]]
+     [:em "Ilium"] "?"]
+    [:p [state {:var :contract-sealed}]]]
    :homo-fuge
-   [[:p "I see it plain; here in this place is writ," [:br]
+   [[:p [state {:var :contract-sealed}]]
+    [:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
 (defonce my-current-page (reagent/atom :start))
@@ -51,7 +66,8 @@
 (defn start []
   (reagent/render-component
     [book {:pages mypages
-           :state (conj myvars {:current-page my-current-page})}]
+           :state (conj (atomize-vals myvars)
+                        {:current-page my-current-page})}]
     (. js/document (getElementById "app"))))
 
 (defn ^:export init []
