@@ -19,18 +19,18 @@
         (map #(update-component-params %1 k v) (nthrest coll 2))))
     coll))
 
-(defn page-link [{:keys [id state]} & content]
+(defn PageLink [{:keys [id state]} & content]
   (do 
   [:a {:href (str "#" (name id)) 
        :on-click #(reset! (state :current-page) (keyword id))}
    content]))
 
-(defn book [{:keys [pages state]}]
+(defn Book [{:keys [pages state]}]
   (let [p (pages @(state :current-page))]
-    (into [:div {:class "gabriel-book"}]
+    (into [:div {:class "gabriel-Book"}]
           (update-component-params p :state state))))
 
-(defn reset [params]
+(defn Reset [params]
   (let [state (params :state)
         params-except-state (dissoc params :state)]
     (doall (map
@@ -38,7 +38,7 @@
      params-except-state))
     nil))
 
-(defn state [params] (do 
+(defn State [params] (do 
   ;;@(get-in params [:state :contract-sealed])))
   @(get-in params [:state (-> :var params keyword)])))
 
@@ -56,12 +56,12 @@
 
 (defonce mypages
   {:start
-   [[reset {:contract-sealed 1}]
+   [[Reset {:contract-sealed 1}]
     [:h3 "Gabriel example project"]
     [:p "Was this the face that launched a thousand ships," [:br]
-     "And " [page-link {:id "homo-fuge"} "burned"] " the topless towers of "
+     "And " [PageLink {:id "homo-fuge"} "burned"] " the topless towers of "
      [:em "Ilium"] "?"]
-    [:p [state {:var :contract-sealed}]]]
+    [:p [State {:var :contract-sealed}]]]
    :homo-fuge
    [[:p [Case {:var :contract-sealed} 1 "meow" false "moo" "mow"]]
     [:p "I see it plain; here in this place is writ," [:br]
@@ -71,7 +71,7 @@
 
 (defn start []
   (reagent/render-component
-   [book {:pages mypages
+   [Book {:pages mypages
           :state (conj (atomize-vals myvars)
                        {:current-page my-current-page})}]
    (. js/document (getElementById "app"))))
