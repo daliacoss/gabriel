@@ -42,6 +42,12 @@
   ;;@(get-in params [:state :contract-sealed])))
   @(get-in params [:state (-> :var params keyword)])))
 
+(defn Case [params & more]
+  (let [conditions (apply hash-map (drop-last more))]
+    (get conditions
+         @((params :state) (params :var))
+         (last more))))
+
 (defn atomize-vals [m]
   (zipmap (keys m) (map reagent/atom (vals m))))
 
@@ -57,7 +63,7 @@
      [:em "Ilium"] "?"]
     [:p [state {:var :contract-sealed}]]]
    :homo-fuge
-   [[:p [state {:var :contract-sealed}]]
+   [[:p [Case {:var :contract-sealed} 1 "meow" false "moo" "mow"]]
     [:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
@@ -65,10 +71,10 @@
 
 (defn start []
   (reagent/render-component
-    [book {:pages mypages
-           :state (conj (atomize-vals myvars)
-                        {:current-page my-current-page})}]
-    (. js/document (getElementById "app"))))
+   [book {:pages mypages
+          :state (conj (atomize-vals myvars)
+                       {:current-page my-current-page})}]
+   (. js/document (getElementById "app"))))
 
 (defn ^:export init []
   ;; init is called ONCE when the page loads
