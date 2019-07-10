@@ -1,6 +1,5 @@
 ;; shadow-cljs configuration
-{:source-paths
- ["src"]
+{:source-paths ["src"]
 
  :dependencies [[binaryage/devtools "0.9.7"]
                 [reagent "0.8.0-alpha2"]
@@ -10,13 +9,20 @@
  :nrepl        {:port 8777}
 
  :builds
- {:app {:target :browser
+ {:bootstrap {:target :bootstrap
+              :exclude #{cljs.js}
+              ;:entries [gabriel.core]
+              :output-dir "public/js/compiled/bootstrap"}
+  :app {:target :browser
         :output-dir "public/js/compiled"
         :asset-path "/js/compiled"
+        ;; simple optimization is required for cljs eval to work
+        :compiler-options {:optimizations :simple}
 
         :modules
         {:main
-         {:entries [gabriel.core]}}
+         {:entries [gabriel.core ]}}
+         ;{:entries [gabriel.core ]}}
 
         :devtools
         ;; before live-reloading any code call this function
