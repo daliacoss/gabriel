@@ -20,6 +20,14 @@
 
 (declare component?)
 
+(def logic-operators
+  {:eq =
+   :lt <
+   :gt >
+   :lte <=
+   :gte >=
+   :ne not=})
+
 (defn some-rec [pred coll]
   (when (not (empty? coll))
     (let [x (first coll)]
@@ -45,11 +53,13 @@
 
 (defn PageLink [{:keys [to state]} & content] (do
   [:a {:href (str "#" (name to)) 
-       :on-click #(reset! (state :current-page) (keyword to))}
+       :on-click
+       #(reset! (state :current-page) (keyword to))}
    content]))
 
 (defn Book [{:keys [vars]}]
   (let [state (atomize-vals (assoc vars :current-page :start))]
+    (println state)
     (fn [{:keys [pages]}]
       (let [p (pages @(state :current-page))]
         (into [:div {:class "gabriel-Book"}]
@@ -67,57 +77,56 @@
   @(state (keyword child)))
   ;;@(get-in params [:state (-> :var params keyword)])))
 
-(defn Case [params & more]
-  (let [conditions (apply hash-map (drop-last more))]
-    (-> more second type println)
-    (get conditions
-         @((params :state) (params :var))
-         (last more))))
+(defn component-vector? [x]
+  (-> x first component?))
 
-(def component? #{Reset, State, Case})
+(defn first=
+  ([xs x] (= (first xs) x))
+  ([x] #(first= % x)))
 
-(def logic-operators
-  {:eq =
-   :lt <
-   :gt >
-   :lte <=
-   :gte >=
-   :ne not=})
+(defn check-case [c x]
 
-['If {:var "contract-sealed"}]
+  (let [op-entries (filter #(logic-operators (key %)) (second c))]
+    (when (seq op-entries)
+      (every? #((logic-operators (key %)) x (val %)) op-entries))))
 
-[State #{:contract-sealed}]
+(defn Case [params child])
 
-['If {:? pos?}]
+(defn Else [params child])
 
-['Switch #{:contract-sealed}]
-;;[State {:var :contract-sealed}
-;;  [Case {:eq 3} ]
-;;  [Case {:eq 4} ]
-;;  [Else {} ]]
+(defn Switch [params & children]
+  (let [cases (filter (first= Case) children)
+        x     @((params :state) (params :var))]
+;    (println (-> cases first (check-case x)))
+    (if-let [found (first (filter #(check-case % x) cases))]
+      (get found 2)
+;      (println (first (filter (first= Else) children))))))
+      (get (first (filter (first= Else) children)) 2))))
 
-;(cljs.js/eval-str "(+ 1 1)")
+(def component? #{PageLink Reset State Case Switch Else})
+
 (def myvars
   {:contract-sealed false})
 
 (def mypages
   {:start
    [[Reset {:contract-sealed 1}]
-    [:h3 "Gabriel example project"]
+    [:h3 "Gabriel example" " project"]
     [:p "Was this the face that launched a thousand ships," [:br]
      "And " [PageLink {:to "homo-fuge"} "burned"] " the topless towers of "
      [:em "Ilium"] "?"]
     [:p
      [State :contract-sealed] [:br]
-     [Case {:var :contract-sealed} 1 [:strong "meow"] false "moo" "mow"]]]
+     [Switch {:var :contract-sealed}
+      [Case {:lt 1} "moo"]
+      [Case {:lt 2} "meow"]
+      ]]
+    ]
    :homo-fuge
-   [[:p [Case {:var :contract-sealed} 1 "meow" false "moo" "mow"]]
-    [:p "I see it plain; here in this place is writ," [:br]
+   [[:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
 (def my-current-page (reagent/atom :start))
-
-(eval-str "[1 2 3]" println)
 
 (defn ^:export start []
   (reagent/render-component
