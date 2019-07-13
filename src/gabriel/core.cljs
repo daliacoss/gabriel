@@ -37,11 +37,12 @@
 (defn update-component-params [coll, k, v]
   (if (sequential? coll)
     (let [a (first coll), b (second coll)] 
+      (println coll)
       (into
         (if (component? a)
           (if (map? b)
             [a (assoc b k v)]
-            [a {k v} b])
+            [a {k v} (update-component-params b k v)])
           [(update-component-params a k v) (update-component-params b k v)])
         (map #(update-component-params %1 k v) (nthrest coll 2))))
     coll))
@@ -50,6 +51,7 @@
   (zipmap (keys m) (map reagent/atom (vals m))))
 
 (defn link [{:keys [to state]} & content] (do
+  (println to state)
   [:a {:href (str "#" (name to)) 
        :on-click
        #(reset! (state :current-page) (keyword to))}
@@ -105,6 +107,8 @@
       (do
         (get (first (filter (first= else) children)) 2)))))
 
+; [for {:times 3 :outer [:span.whatever]}
+
 (def component? #{link reset state switch else})
 
 (def myvars
@@ -123,9 +127,11 @@
       [true? {:gt 2} "mow"]
       [true? {:lt 1} "moo"]
       [true? {:lt 0} "meow"]
-      [else "banana"]
+      [else [link {:to "test-exec-order"} "banana"]]
       ]]
     ]
+   :test-exec-order
+   [[:p "outer 1"]]
    :homo-fuge
    [[:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
