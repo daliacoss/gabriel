@@ -51,20 +51,20 @@
 (defn atomize-vals [m]
   (zipmap (keys m) (map reagent/atom (vals m))))
 
-(defn PageLink [{:keys [to state]} & content] (do
+(defn link [{:keys [to state]} & content] (do
   [:a {:href (str "#" (name to)) 
        :on-click
        #(reset! (state :current-page) (keyword to))}
    content]))
 
-(defn Book [{:keys [vars]}]
+(defn book [{:keys [vars]}]
   (let [state (atomize-vals (assoc vars :current-page :start))]
     (fn [{:keys [pages]}]
       (let [p (pages @(state :current-page))]
-        (into [:div {:class "gabriel-Book"}]
+        (into [:div {:class "gabriel-book"}]
               (update-component-params p :state state))))))
 
-(defn Reset [params]
+(defn reset [params]
   (let [state (params :state)
         params-except-state (dissoc params :state)]
     (doall (map
@@ -72,7 +72,7 @@
      params-except-state))
     nil))
 
-(defn State [{:keys [state]} child]
+(defn state [{:keys [state]} child]
   @(state (keyword child)))
   ;;@(get-in params [:state (-> :var params keyword)])))
 
@@ -94,38 +94,38 @@
     (when (seq op-entries)
       (every? #(pred ((-> % key logic-operators) x (val %))) op-entries))))
 
-(defn Else [params child])
+(defn else [params child])
 
-(defn Switch [params & children]
+(defn switch [params & children]
   (let [cases (filter
-               ;; a case is any vector whose first element is a fn other than Else
-               (firstp #(and (fn? %) (not= % Else)))
+               ;; a case is any vector whose first element is a fn other than else
+               (firstp #(and (fn? %) (not= % else)))
                children)
         x     @((params :state) (params :var))]
     (if-let [found (first (filter #(check-case % x) cases))]
       (get found 2)
       (do
-        (get (first (filter (first= Else) children)) 2)))))
+        (get (first (filter (first= else) children)) 2)))))
 
-(def component? #{PageLink Reset State Switch Else})
+(def component? #{link reset state switch else})
 
 (def myvars
   {:contract-sealed false})
 
 (def mypages
   {:start
-   [[Reset {:contract-sealed 1}]
+   [[reset {:contract-sealed 1}]
     [:h3 "Gabriel example" " project"]
     [:p "Was this the face that launched a thousand ships," [:br]
-     "And " [PageLink {:to "homo-fuge"} "burned"] " the topless towers of "
+     "And " [link {:to "homo-fuge"} "burned"] " the topless towers of "
      [:em "Ilium"] "?"]
     [:p
-     [State :contract-sealed] [:br]
-     [Switch {:var :contract-sealed}
+     [state :contract-sealed] [:br]
+     [switch {:var :contract-sealed}
       [true? {:gt 2} "mow"]
       [true? {:lt 1} "moo"]
       [true? {:lt 0} "meow"]
-      [Else "banana"]
+      [else "banana"]
       ]]
     ]
    :homo-fuge
@@ -136,7 +136,7 @@
 
 (defn ^:export start []
   (reagent/render-component
-   [Book {:pages mypages
+   [book {:pages mypages
           :vars myvars}]
    (. js/document (getElementById "app"))))
 
