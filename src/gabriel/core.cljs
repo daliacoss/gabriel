@@ -16,8 +16,6 @@
      :ns   (symbol "gabriel.core")}
     cb))
 
-;; Views
-
 (declare component?)
 
 (def logic-operators
@@ -72,9 +70,9 @@
      params-except-state))
     nil))
 
-(defn state [{:keys [state]} child]
-  @(state (keyword child)))
-  ;;@(get-in params [:state (-> :var params keyword)])))
+(defn state
+  ([params child] @((params :state) (keyword child)))
+  ([params] (state params (params :var))))
 
 (defn component-vector? [x]
   (-> x first component?))
@@ -120,7 +118,7 @@
      "And " [link {:to "homo-fuge"} "burned"] " the topless towers of "
      [:em "Ilium"] "?"]
     [:p
-     [state :contract-sealed] [:br]
+     [state :contract-sealed] [state {:var :contract-sealed}] [:br]
      [switch {:var :contract-sealed}
       [true? {:gt 2} "mow"]
       [true? {:lt 1} "moo"]
