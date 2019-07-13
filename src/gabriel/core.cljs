@@ -59,7 +59,6 @@
 
 (defn Book [{:keys [vars]}]
   (let [state (atomize-vals (assoc vars :current-page :start))]
-    (println state)
     (fn [{:keys [pages]}]
       (let [p (pages @(state :current-page))]
         (into [:div {:class "gabriel-Book"}]
@@ -81,29 +80,34 @@
   (-> x first component?))
 
 (defn first=
-  ([xs x] (= (first xs) x))
-  ([x] #(first= % x)))
+  ([x xs] (= (first xs) x))
+  ([x] #(first= x %)))
+
+(defn firstp
+  ([pred xs] (pred (first xs)))
+  ([pred] #(firstp pred %)))
 
 (defn check-case [c x]
 
-  (let [op-entries (filter #(logic-operators (key %)) (second c))]
+  (let [pred       (first c)
+        op-entries (filter #(-> % key logic-operators) (second c))]
     (when (seq op-entries)
-      (every? #((logic-operators (key %)) x (val %)) op-entries))))
-
-(defn Case [params child])
+      (every? #(pred ((-> % key logic-operators) x (val %))) op-entries))))
 
 (defn Else [params child])
 
 (defn Switch [params & children]
-  (let [cases (filter (first= Case) children)
+  (let [cases (filter
+               ;; a case is any vector whose first element is a fn other than Else
+               (firstp #(and (fn? %) (not= % Else)))
+               children)
         x     @((params :state) (params :var))]
-;    (println (-> cases first (check-case x)))
     (if-let [found (first (filter #(check-case % x) cases))]
       (get found 2)
-;      (println (first (filter (first= Else) children))))))
-      (get (first (filter (first= Else) children)) 2))))
+      (do
+        (get (first (filter (first= Else) children)) 2)))))
 
-(def component? #{PageLink Reset State Case Switch Else})
+(def component? #{PageLink Reset State Switch Else})
 
 (def myvars
   {:contract-sealed false})
@@ -118,8 +122,10 @@
     [:p
      [State :contract-sealed] [:br]
      [Switch {:var :contract-sealed}
-      [Case {:lt 1} "moo"]
-      [Case {:lt 2} "meow"]
+      [true? {:gt 2} "mow"]
+      [true? {:lt 1} "moo"]
+      [true? {:lt 0} "meow"]
+      [Else "banana"]
       ]]
     ]
    :homo-fuge
