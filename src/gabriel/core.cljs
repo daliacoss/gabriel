@@ -18,6 +18,7 @@
 
 (declare component?)
 
+(def _ (atom nil))
 (def logic-operators
   {:eq =
    :lt <
@@ -34,10 +35,20 @@
         (sequential? x) (recur pred x)
         () (recur pred (rest coll))))))
 
+(defn replace-rec
+  ([smap coll]
+   (replace-rec smap coll identity))
+  ([smap coll to]
+   (to (map
+        (fn [x]
+            (if
+              (sequential? x) (replace-rec smap x to)
+              (get smap x x)))
+        coll))))
+
 (defn update-component-params [coll, k, v]
   (if (sequential? coll)
     (let [a (first coll), b (second coll)] 
-      (println coll)
       (into
         (if (component? a)
           (if (map? b)
@@ -51,7 +62,6 @@
   (zipmap (keys m) (map reagent/atom (vals m))))
 
 (defn link [{:keys [to state]} & content] (do
-  (println to state)
   [:a {:href (str "#" (name to)) 
        :on-click
        #(reset! (state :current-page) (keyword to))}
@@ -94,7 +104,8 @@
     (when (seq op-entries)
       (every? #(pred ((-> % key logic-operators) x (val %))) op-entries))))
 
-(defn else [params child])
+(defn else [params child]
+  (conj [else params] child))
 
 (defn switch [params & children]
   (let [cases (filter
@@ -109,10 +120,32 @@
 
 ; [for {:times 3 :outer [:span.whatever]}
 
-(def component? #{link reset state switch else})
+(defn debug [params & children]
+  children)
+
+(defn- _each [{:keys [state in wrapper]} f]
+  (into
+   (cond
+     (nil? wrapper) [:span]
+     (sequential? wrapper) (vec wrapper)
+     (component? wrapper) [wrapper {:state state}]
+     :else [wrapper])
+   (map f @(state in))))
+
+(defn each
+  ([params child]
+   (_each params (cond
+                   (fn? child) child
+                   (= child _) identity
+                   :else #(replace-rec {_ %} child vec))))
+  ([params & children]
+   (_each params #(replace-rec {_ %} children vec))))
+
+(def component? #{each link reset state switch else debug})
 
 (def myvars
-  {:contract-sealed false})
+  {:contract-sealed false
+   :foo ["one" "two" "three"]})
 
 (def mypages
   {:start
@@ -127,11 +160,12 @@
       [true? {:gt 2} "mow"]
       [true? {:lt 1} "moo"]
       [true? {:lt 0} "meow"]
-      [else [link {:to "test-exec-order"} "banana"]]
+      [else [link {:to "test-render-order"} "banana"]]
       ]]
     ]
-   :test-exec-order
-   [[:p "outer 1"]]
+   :test-render-order
+   [[each {:in :foo} [:p [:strong _]]]
+    [:p [link {:to "start"} "back to start"] ]]
    :homo-fuge
    [[:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
