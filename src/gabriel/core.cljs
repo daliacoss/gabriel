@@ -97,7 +97,7 @@
   ([pred xs] (pred (first xs)))
   ([pred] #(firstp pred %)))
 
-(defn check-case [c x]
+(defn- check-case [c x]
 
   (let [pred       (first c)
         op-entries (filter #(-> % key logic-operators) (second c))]
@@ -118,9 +118,7 @@
       (do
         (get (first (filter (first= else) children)) 2)))))
 
-; [for {:times 3 :outer [:span.whatever]}
-
-(defn debug [params & children]
+(defn- debug [params & children]
   children)
 
 (defn- _each [{:keys [state in wrapper]} f]
@@ -143,11 +141,11 @@
 
 (def component? #{each link reset state switch else debug})
 
-(def myvars
+(def ^:private myvars
   {:contract-sealed false
    :foo ["one" "two" "three"]})
 
-(def mypages
+(def ^:private mypages
   {:start
    [[reset {:contract-sealed 1}]
     [:h3 "Gabriel example" " project"]
@@ -170,7 +168,7 @@
    [[:p "I see it plain; here in this place is writ," [:br]
      [:em "Homo, fuge"] ": yet shall not Faustus fly."]]})
 
-(def my-current-page (reagent/atom :start))
+(def ^:private my-current-page (reagent/atom :start))
 
 (defn ^:export start []
   (reagent/render-component
